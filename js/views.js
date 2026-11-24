@@ -92,7 +92,7 @@ const EduViews = {
   },
 
   results(user) {
-    const mine = EduStore.data.results.filter((r) => user.role !== "mahasiswa" || r.student === user.name);
+    const mine = EduStore.data.results.filter((r) => user.role !== "mahasiswa" || r.studentId === user.username);
     const items = mine.slice().reverse().map((r) => `
       <div class="list-item">
         <div><b>${esc(r.quiz)}</b><br><small>${esc(r.student)} · ${esc(r.date)} · ${r.correct}/${r.total} benar</small></div>
@@ -102,6 +102,34 @@ const EduViews = {
       <div class="panel">
         <h3>Riwayat Nilai</h3>
         ${items || '<p class="empty">Belum ada hasil kuis. Silakan kerjakan kuis terlebih dahulu.</p>'}
+      </div>`;
+  },
+
+  users() {
+    const rows = EduStore.data.users.map((u) => `
+      <tr><td>${esc(u.name)}</td><td>${esc(u.username)}</td><td>${esc(EduUtils.roleName(u.role))}</td></tr>`).join("");
+    return `
+      <div class="panel">
+        <h3>Tambah akun</h3>
+        <form id="userForm" class="inline-form">
+          <input name="name" placeholder="Nama lengkap" required>
+          <input name="username" placeholder="Nama pengguna" required autocomplete="off">
+          <input name="password" type="password" placeholder="Kata sandi (min. 6 karakter)" required autocomplete="new-password">
+          <select name="role">
+            <option value="dosen">Dosen</option>
+            <option value="admin">Admin</option>
+            <option value="mahasiswa">Mahasiswa</option>
+          </select>
+          <button class="primary" type="submit">Simpan akun</button>
+        </form>
+        <p id="userFormMsg" class="form-error hidden" role="alert"></p>
+      </div>
+      <div class="panel">
+        <h3>Daftar pengguna (${EduStore.data.users.length})</h3>
+        <table class="user-table">
+          <thead><tr><th>Nama</th><th>Nama pengguna</th><th>Peran</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>`;
   },
 };

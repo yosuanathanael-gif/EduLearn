@@ -1,13 +1,17 @@
 /* Penyimpanan data di localStorage. Data awal berasal dari folder data/. */
 const EduStore = {
   KEY: "edulearn_v3",
-  data: { courses: [], materials: [], quizzes: [], results: [] },
+  data: { courses: [], materials: [], quizzes: [], results: [], users: [] },
 
   load() {
     try {
       const saved = localStorage.getItem(this.KEY);
       if (saved) {
         this.data = JSON.parse(saved);
+        if (!this.data.users) {
+          this.data.users = structuredClone(window.EDULEARN_SEED.users);
+          this.save();
+        }
         return;
       }
     } catch (error) {
@@ -19,6 +23,7 @@ const EduStore = {
       materials: structuredClone(seed.materials),
       quizzes: structuredClone(seed.quizzes),
       results: [],
+      users: structuredClone(seed.users),
     };
     this.save();
   },
@@ -29,6 +34,10 @@ const EduStore = {
     } catch (error) {
       console.error("Gagal menyimpan data.", error);
     }
+  },
+
+  user(username) {
+    return this.data.users.find((u) => u.username === username);
   },
 
   course(id) {

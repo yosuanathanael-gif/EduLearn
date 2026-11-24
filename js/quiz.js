@@ -31,6 +31,7 @@ const EduQuiz = {
         quizId: quiz.id,
         courseId: quiz.courseId,
         quiz: quiz.title,
+        studentId: user.username,
         student: user.name,
         correct,
         total: quiz.questions.length,

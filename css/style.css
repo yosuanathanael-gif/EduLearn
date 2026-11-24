@@ -516,3 +516,50 @@ footer {
     grid-template-columns: 1fr;
   }
 }
+
+/* Login, pendaftaran, dan halaman Pengguna */
+.form-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fdecec;
+  color: #a4262c;
+  font-size: 13px;
+}
+
+.form-error.ok {
+  background: #e6f6ec;
+  color: #1c6b3a;
+}
+
+.link-button {
+  background: none;
+  color: var(--blue);
+  padding: 4px 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.user-table th,
+.user-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}

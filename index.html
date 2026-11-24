@@ -13,15 +13,29 @@
       <h1>EduLearn</h1>
       <p class="muted">Platform Pembelajaran Daring</p>
       <label for="username">Nama pengguna</label>
-      <input id="username" required placeholder="Masukkan nama pengguna">
-      <label for="role">Masuk sebagai</label>
-      <select id="role">
-        <option value="mahasiswa">Mahasiswa</option>
-        <option value="dosen">Dosen</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button class="primary full" type="submit">Masuk ke aplikasi</button>
-      <p class="hint">Demo: masukkan nama apa saja, lalu pilih peran.</p>
+      <input id="username" required autocomplete="username" placeholder="Masukkan nama pengguna">
+      <label for="password">Kata sandi</label>
+      <input id="password" type="password" required autocomplete="current-password" placeholder="Masukkan kata sandi">
+      <p id="loginError" class="form-error hidden" role="alert"></p>
+      <button class="primary full" type="submit">Masuk</button>
+      <button class="link-button" type="button" id="showRegister">Belum punya akun? Daftar sebagai mahasiswa</button>
+      <p class="hint">Akun demo: admin / admin123, dosen / dosen123, mahasiswa / mahasiswa123</p>
+    </form>
+    <form id="registerForm" class="login-card hidden">
+      <div class="brand-mark">E</div>
+      <h1>Daftar akun</h1>
+      <p class="muted">Akun baru otomatis berperan sebagai mahasiswa.</p>
+      <label for="regName">Nama lengkap</label>
+      <input id="regName" required autocomplete="name">
+      <label for="regUsername">Nama pengguna</label>
+      <input id="regUsername" required autocomplete="username" placeholder="huruf kecil, angka, garis bawah">
+      <label for="regPassword">Kata sandi</label>
+      <input id="regPassword" type="password" required autocomplete="new-password" placeholder="Minimal 6 karakter">
+      <label for="regConfirm">Ulangi kata sandi</label>
+      <input id="regConfirm" type="password" required autocomplete="new-password">
+      <p id="registerError" class="form-error hidden" role="alert"></p>
+      <button class="primary full" type="submit">Daftar</button>
+      <button class="link-button" type="button" id="showLogin">Sudah punya akun? Masuk</button>
     </form>
   </div>
 
@@ -34,6 +48,7 @@
       <button class="nav-link" data-page="materials">▧ <span>Materi</span></button>
       <button class="nav-link" data-page="quizzes">✓ <span>Kuis</span></button>
       <button class="nav-link" data-page="results">▥ <span>Nilai</span></button>
+      <button class="nav-link hidden" id="navUsers" data-page="users">☰ <span>Pengguna</span></button>
       <div class="sidebar-bottom">
         <div class="user-mini"><div class="avatar" id="sideAvatar">U</div><div><b id="sideName">Pengguna</b><small id="sideRole">Mahasiswa</small></div></div>
         <button id="logoutBtn" class="logout">↪ Keluar</button>
@@ -52,8 +67,10 @@
   <script src="data/courses.js"></script>
   <script src="data/materials.js"></script>
   <script src="data/quizzes.js"></script>
+  <script src="data/users.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/views.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/app.js"></script>
