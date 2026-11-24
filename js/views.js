@@ -84,8 +84,10 @@ const EduViews = {
             <h3>${esc(q.title)}</h3>
             <p>${q.questions.length} soal pilihan ganda · Nilai dihitung otomatis</p>
             ${canTake
-              ? `<button class="primary" data-action="start-quiz" data-id="${q.id}">Mulai kuis</button>`
-              : '<span class="muted">Mode pengelolaan kuis (demo)</span>'}
+              ? (q.questions.length
+                ? `<button class="primary" data-action="start-quiz" data-id="${q.id}">Mulai kuis</button>`
+                : '<span class="muted">Belum ada soal</span>')
+              : '<span class="muted">Kelola soal lewat menu Kelola Kuis</span>'}
           </article>`).join("")}
       </div>
       <div id="quizArea"></div>`;
@@ -183,6 +185,81 @@ const EduViews = {
         <div class="row-actions">
           <button class="primary" type="submit">Simpan materi</button>
           <button class="secondary" type="button" data-action="cancel-form">Batal</button>
+        </div>
+      </form>`;
+  },
+
+  manageQuizzes() {
+    const options = EduStore.data.courses.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+    const rows = EduStore.data.quizzes.map((q) => `
+      <div class="list-item">
+        <div><b>${esc(q.title)}</b><br><small>${esc(EduStore.courseName(q.courseId))} · ${q.questions.length} soal</small></div>
+        <div class="row-actions">
+          <button class="secondary" data-action="open-quiz-admin" data-id="${q.id}">Kelola soal</button>
+          <button class="danger" data-action="delete-quiz" data-id="${q.id}">Hapus</button>
+        </div>
+      </div>`).join("");
+    return `
+      <p id="quizMsg" class="form-error hidden" role="alert"></p>
+      <div class="panel">
+        <h3>Tambah kuis</h3>
+        <form id="quizForm" class="inline-form">
+          <select name="courseId">${options}</select>
+          <input name="title" placeholder="Judul kuis" required>
+          <button class="primary" type="submit">Simpan kuis</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>Daftar kuis (${EduStore.data.quizzes.length})</h3>
+        ${rows || '<p class="empty">Belum ada kuis. Tambahkan kuis pertama di atas.</p>'}
+      </div>`;
+  },
+
+  quizQuestions(quizId) {
+    const quiz = EduStore.quiz(quizId);
+    if (!quiz) return '<p class="empty">Kuis tidak ditemukan.</p>';
+    const rows = quiz.questions.map((item, i) => `
+      <div class="list-item">
+        <div>
+          <b>${i + 1}. ${esc(item.question)}</b><br>
+          <small>Jawaban benar: ${String.fromCharCode(65 + item.answer)}. ${esc(item.options[item.answer])}</small>
+        </div>
+        <div class="row-actions">
+          <button class="secondary" data-action="edit-question" data-id="${i}">Ubah</button>
+          <button class="danger" data-action="delete-question" data-id="${i}">Hapus</button>
+        </div>
+      </div>`).join("");
+    return `
+      <button class="back-button" data-action="back-quizzes">← Kembali ke daftar kuis</button>
+      <div class="section-head">
+        <h3>${esc(quiz.title)} (${quiz.questions.length} soal)</h3>
+        <button class="primary" data-action="new-question">Tambah soal</button>
+      </div>
+      <p id="quizMsg" class="form-error hidden" role="alert"></p>
+      <div class="panel">${rows || '<p class="empty">Kuis ini belum punya soal. Klik Tambah soal.</p>'}</div>`;
+  },
+
+  questionForm(quizId, index) {
+    const quiz = EduStore.quiz(quizId);
+    const item = index === null ? { question: "", options: ["", "", "", ""], answer: -1 } : quiz.questions[index];
+    const options = [0, 1, 2, 3].map((j) => `
+      <div class="option-row">
+        <input type="radio" name="answer" value="${j}" ${item.answer === j ? "checked" : ""} required aria-label="Jawaban benar ${String.fromCharCode(65 + j)}">
+        <b>${String.fromCharCode(65 + j)}.</b>
+        <input name="option" placeholder="Pilihan ${String.fromCharCode(65 + j)}" required value="${esc(item.options[j] || "")}">
+      </div>`).join("");
+    return `
+      <button class="back-button" data-action="cancel-question">← Kembali ke daftar soal</button>
+      <form id="questionForm" class="panel form-stack">
+        <h3>${index === null ? "Tambah soal" : "Ubah soal"} · ${esc(quiz.title)}</h3>
+        <label for="qfText">Pertanyaan</label>
+        <textarea id="qfText" name="question" rows="3" required>${esc(item.question)}</textarea>
+        <label>Pilihan jawaban (pilih tombol bulat di samping jawaban yang benar)</label>
+        ${options}
+        <p id="questionFormMsg" class="form-error hidden" role="alert"></p>
+        <div class="row-actions">
+          <button class="primary" type="submit">Simpan soal</button>
+          <button class="secondary" type="button" data-action="cancel-question">Batal</button>
         </div>
       </form>`;
   },

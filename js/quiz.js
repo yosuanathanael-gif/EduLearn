@@ -2,7 +2,7 @@
 const EduQuiz = {
   start(quizId, user, area, onViewResults) {
     const quiz = EduStore.quiz(quizId);
-    if (!quiz) return;
+    if (!quiz || !quiz.questions.length) return;
     const esc = EduUtils.esc;
 
     area.innerHTML = `

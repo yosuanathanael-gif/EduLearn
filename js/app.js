@@ -6,6 +6,8 @@ const App = {
   materialId: null,
   editing: null, // null = daftar, "new" = materi baru, angka = id materi yang diubah
 
+  quizAdmin: { quizId: null, edit: null }, // edit: null = daftar soal, "new" = soal baru, angka = urutan soal
+
   titles: {
     dashboard: "Dashboard",
     courses: "Mata Kuliah",
@@ -14,10 +16,11 @@ const App = {
     results: "Hasil Nilai",
     users: "Pengelolaan Pengguna",
     manage: "Kelola Materi",
+    manageQuiz: "Kelola Kuis",
   },
 
   // Halaman yang hanya boleh dibuka oleh peran tertentu.
-  restricted: { users: ["admin"], manage: ["dosen", "admin"] },
+  restricted: { users: ["admin"], manage: ["dosen", "admin"], manageQuiz: ["dosen", "admin"] },
 
   init() {
     EduStore.load();
@@ -97,6 +100,7 @@ const App = {
     $("topAvatar").textContent = initial;
     $("navUsers").classList.toggle("hidden", user.role !== "admin");
     $("navManage").classList.toggle("hidden", user.role === "mahasiswa");
+    $("navQuiz").classList.toggle("hidden", user.role === "mahasiswa");
     $("loginView").classList.add("hidden");
     $("appView").classList.remove("hidden");
     this.go("dashboard");
@@ -122,6 +126,7 @@ const App = {
     this.courseFilter = null;
     this.materialId = null;
     this.editing = null;
+    this.quizAdmin = { quizId: null, edit: null };
     this.render();
   },
 
@@ -140,6 +145,12 @@ const App = {
       quizzes: () => EduViews.quizzes(this.user),
       results: () => EduViews.results(this.user),
       users: () => EduViews.users(),
+      manageQuiz: () => {
+        const { quizId, edit } = this.quizAdmin;
+        if (!quizId) return EduViews.manageQuizzes();
+        if (edit === null) return EduViews.quizQuestions(quizId);
+        return EduViews.questionForm(quizId, edit === "new" ? null : edit);
+      },
       manage: () => (this.editing === null
         ? EduViews.manage()
         : EduViews.materialForm(this.editing === "new" ? null : EduStore.material(this.editing))),
@@ -196,6 +207,32 @@ const App = {
       case "remove-section":
         if (document.querySelectorAll(".section-fields").length > 1) el.closest(".section-fields").remove();
         break;
+      case "open-quiz-admin":
+        this.quizAdmin = { quizId: id, edit: null };
+        this.render();
+        break;
+      case "back-quizzes":
+        this.quizAdmin = { quizId: null, edit: null };
+        this.render();
+        break;
+      case "new-question":
+        this.quizAdmin.edit = "new";
+        this.render();
+        break;
+      case "edit-question":
+        this.quizAdmin.edit = id;
+        this.render();
+        break;
+      case "cancel-question":
+        this.quizAdmin.edit = null;
+        this.render();
+        break;
+      case "delete-question":
+        this.deleteQuestion(id);
+        break;
+      case "delete-quiz":
+        this.deleteQuiz(id);
+        break;
       case "start-quiz":
         EduQuiz.start(id, this.user, EduUtils.$("quizArea"), () => this.go("results"));
         break;
@@ -230,7 +267,53 @@ const App = {
     this.showMessage("manageMsg", "Materi berhasil disimpan.", true);
   },
 
+  deleteQuiz(id) {
+    const quiz = EduStore.quiz(id);
+    if (!quiz || !this.canOpen("manageQuiz")) return;
+    if (!confirm(`Hapus kuis "${quiz.title}" beserta seluruh soalnya?`)) return;
+    EduQuizAdmin.removeQuiz(id);
+    this.render();
+    this.showMessage("quizMsg", "Kuis dihapus.", true);
+  },
+
+  deleteQuestion(index) {
+    const { quizId } = this.quizAdmin;
+    if (!EduStore.quiz(quizId) || !this.canOpen("manageQuiz")) return;
+    if (!confirm(`Hapus soal nomor ${index + 1}?`)) return;
+    EduQuizAdmin.removeQuestion(quizId, index);
+    this.render();
+    this.showMessage("quizMsg", "Soal dihapus.", true);
+  },
+
+  saveQuiz(event) {
+    event.preventDefault();
+    if (!this.canOpen("manageQuiz")) return;
+    const f = new FormData(event.target);
+    const result = EduQuizAdmin.addQuiz(Number(f.get("courseId")), f.get("title"));
+    this.render();
+    this.showMessage("quizMsg", result.ok ? "Kuis berhasil dibuat. Klik Kelola soal untuk menambah soal." : result.error, result.ok);
+  },
+
+  saveQuestion(event) {
+    event.preventDefault();
+    if (!this.canOpen("manageQuiz")) return;
+    const f = new FormData(event.target);
+    const { quizId, edit } = this.quizAdmin;
+    const answer = f.get("answer");
+    const result = EduQuizAdmin.saveQuestion(quizId, edit === "new" ? null : edit, {
+      question: f.get("question"),
+      options: f.getAll("option"),
+      answer: answer === null ? NaN : Number(answer),
+    });
+    if (!result.ok) return this.showMessage("questionFormMsg", result.error);
+    this.quizAdmin.edit = null;
+    this.render();
+    this.showMessage("quizMsg", "Soal berhasil disimpan.", true);
+  },
+
   async handleForm(event) {
+    if (event.target.id === "quizForm") return this.saveQuiz(event);
+    if (event.target.id === "questionForm") return this.saveQuestion(event);
     if (event.target.id === "materialForm") return this.saveMaterial(event);
     if (event.target.id !== "userForm") return;
     event.preventDefault();
