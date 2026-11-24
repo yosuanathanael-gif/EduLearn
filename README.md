@@ -30,6 +30,7 @@ EduLearn/
     utils.js        Fungsi bantu (pembersih teks, nama peran, tanggal)
     storage.js      Membaca dan menyimpan data di localStorage
     auth.js         Akun, hash kata sandi, dan sesi login
+    materials.js    Tambah, ubah, hapus materi (Dosen dan Admin)
     views.js        Tampilan tiap halaman
     quiz.js         Pengerjaan kuis dan penilaian otomatis
     app.js          Login, navigasi, dan penangan klik

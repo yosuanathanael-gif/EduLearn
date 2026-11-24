@@ -4,6 +4,7 @@ const App = {
   page: "dashboard",
   courseFilter: null,
   materialId: null,
+  editing: null, // null = daftar, "new" = materi baru, angka = id materi yang diubah
 
   titles: {
     dashboard: "Dashboard",
@@ -12,10 +13,11 @@ const App = {
     quizzes: "Kuis",
     results: "Hasil Nilai",
     users: "Pengelolaan Pengguna",
+    manage: "Kelola Materi",
   },
 
   // Halaman yang hanya boleh dibuka oleh peran tertentu.
-  restricted: { users: ["admin"] },
+  restricted: { users: ["admin"], manage: ["dosen", "admin"] },
 
   init() {
     EduStore.load();
@@ -94,6 +96,7 @@ const App = {
     $("sideAvatar").textContent = initial;
     $("topAvatar").textContent = initial;
     $("navUsers").classList.toggle("hidden", user.role !== "admin");
+    $("navManage").classList.toggle("hidden", user.role === "mahasiswa");
     $("loginView").classList.add("hidden");
     $("appView").classList.remove("hidden");
     this.go("dashboard");
@@ -118,6 +121,7 @@ const App = {
     this.page = this.canOpen(page) ? page : "dashboard";
     this.courseFilter = null;
     this.materialId = null;
+    this.editing = null;
     this.render();
   },
 
@@ -136,6 +140,9 @@ const App = {
       quizzes: () => EduViews.quizzes(this.user),
       results: () => EduViews.results(this.user),
       users: () => EduViews.users(),
+      manage: () => (this.editing === null
+        ? EduViews.manage()
+        : EduViews.materialForm(this.editing === "new" ? null : EduStore.material(this.editing))),
     };
     EduUtils.$("pageContent").innerHTML = views[this.page]();
   },
@@ -168,6 +175,27 @@ const App = {
         this.materialId = null;
         this.render();
         break;
+      case "new-material":
+        this.editing = "new";
+        this.render();
+        break;
+      case "edit-material":
+        this.editing = id;
+        this.render();
+        break;
+      case "cancel-form":
+        this.editing = null;
+        this.render();
+        break;
+      case "delete-material":
+        this.deleteMaterial(id);
+        break;
+      case "add-section":
+        EduUtils.$("sectionList").insertAdjacentHTML("beforeend", EduViews.sectionFields({ heading: "", body: "" }));
+        break;
+      case "remove-section":
+        if (document.querySelectorAll(".section-fields").length > 1) el.closest(".section-fields").remove();
+        break;
       case "start-quiz":
         EduQuiz.start(id, this.user, EduUtils.$("quizArea"), () => this.go("results"));
         break;
@@ -175,7 +203,35 @@ const App = {
   },
 
   // Formulir di dalam halaman (saat ini: tambah akun oleh Admin).
+  deleteMaterial(id) {
+    const material = EduStore.material(id);
+    if (!material || !this.canOpen("manage")) return;
+    if (!confirm(`Hapus materi "${material.title}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    EduMaterials.remove(id);
+    this.render();
+    this.showMessage("manageMsg", "Materi dihapus.", true);
+  },
+
+  saveMaterial(event) {
+    event.preventDefault();
+    if (!this.canOpen("manage")) return;
+    const f = new FormData(event.target);
+    const result = EduMaterials.save(this.editing === "new" ? null : this.editing, {
+      courseId: Number(f.get("courseId")),
+      title: f.get("title"),
+      summary: f.get("summary"),
+      headings: f.getAll("sectionHeading"),
+      bodies: f.getAll("sectionBody"),
+      points: f.get("points"),
+    });
+    if (!result.ok) return this.showMessage("materialFormMsg", result.error);
+    this.editing = null;
+    this.render();
+    this.showMessage("manageMsg", "Materi berhasil disimpan.", true);
+  },
+
   async handleForm(event) {
+    if (event.target.id === "materialForm") return this.saveMaterial(event);
     if (event.target.id !== "userForm") return;
     event.preventDefault();
     if (this.user.role !== "admin") return; // pemeriksaan ulang di sisi logika

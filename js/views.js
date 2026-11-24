@@ -132,4 +132,58 @@ const EduViews = {
         </table>
       </div>`;
   },
+
+  manage() {
+    const rows = EduStore.data.materials.map((m) => `
+      <div class="list-item">
+        <div><b>${esc(m.title)}</b><br><small>${esc(EduStore.courseName(m.courseId))}</small></div>
+        <div class="row-actions">
+          <button class="secondary" data-action="edit-material" data-id="${m.id}">Ubah</button>
+          <button class="danger" data-action="delete-material" data-id="${m.id}">Hapus</button>
+        </div>
+      </div>`).join("");
+    return `
+      <div class="section-head">
+        <h3>Daftar materi (${EduStore.data.materials.length})</h3>
+        <button class="primary" data-action="new-material">Tambah materi</button>
+      </div>
+      <p id="manageMsg" class="form-error hidden" role="alert"></p>
+      <div class="panel">${rows || '<p class="empty">Belum ada materi. Klik Tambah materi untuk membuat yang pertama.</p>'}</div>`;
+  },
+
+  sectionFields(section) {
+    return `
+      <div class="section-fields">
+        <input name="sectionHeading" placeholder="Judul bagian" value="${esc(section.heading)}">
+        <textarea name="sectionBody" rows="3" placeholder="Isi bagian">${esc(section.body)}</textarea>
+        <button type="button" class="link-button" data-action="remove-section">Hapus bagian ini</button>
+      </div>`;
+  },
+
+  materialForm(material) {
+    const sections = material ? material.sections : [{ heading: "", body: "" }];
+    const options = EduStore.data.courses.map((c) =>
+      `<option value="${c.id}" ${material && material.courseId === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+    return `
+      <button class="back-button" data-action="cancel-form">← Kembali ke daftar materi</button>
+      <form id="materialForm" class="panel form-stack">
+        <h3>${material ? "Ubah materi" : "Tambah materi"}</h3>
+        <label for="mfCourse">Mata kuliah</label>
+        <select id="mfCourse" name="courseId">${options}</select>
+        <label for="mfTitle">Judul materi</label>
+        <input id="mfTitle" name="title" required value="${esc(material ? material.title : "")}">
+        <label for="mfSummary">Ringkasan singkat</label>
+        <textarea id="mfSummary" name="summary" rows="2" required>${esc(material ? material.summary : "")}</textarea>
+        <label>Bagian materi</label>
+        <div id="sectionList">${sections.map((s) => this.sectionFields(s)).join("")}</div>
+        <button type="button" class="secondary" data-action="add-section">+ Tambah bagian</button>
+        <label for="mfPoints">Poin ringkasan (satu poin per baris)</label>
+        <textarea id="mfPoints" name="points" rows="4">${esc(material ? material.points.join("\n") : "")}</textarea>
+        <p id="materialFormMsg" class="form-error hidden" role="alert"></p>
+        <div class="row-actions">
+          <button class="primary" type="submit">Simpan materi</button>
+          <button class="secondary" type="button" data-action="cancel-form">Batal</button>
+        </div>
+      </form>`;
+  },
 };
