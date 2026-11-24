@@ -611,3 +611,17 @@ footer {
   width: auto;
   flex: none;
 }
+
+/* Rekap nilai */
+.stats.four {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

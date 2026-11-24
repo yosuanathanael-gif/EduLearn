@@ -6,6 +6,7 @@ const App = {
   materialId: null,
   editing: null, // null = daftar, "new" = materi baru, angka = id materi yang diubah
 
+  recapQuizId: null, // filter kuis pada rekap nilai (null = semua)
   quizAdmin: { quizId: null, edit: null }, // edit: null = daftar soal, "new" = soal baru, angka = urutan soal
 
   titles: {
@@ -35,6 +36,7 @@ const App = {
     });
     $("pageContent").addEventListener("click", (e) => this.handleAction(e));
     $("pageContent").addEventListener("submit", (e) => this.handleForm(e));
+    $("pageContent").addEventListener("change", (e) => this.handleChange(e));
 
     // Pulihkan sesi jika halaman di-refresh.
     const saved = EduStore.user(EduAuth.savedSession());
@@ -127,6 +129,7 @@ const App = {
     this.materialId = null;
     this.editing = null;
     this.quizAdmin = { quizId: null, edit: null };
+    this.recapQuizId = null;
     this.render();
   },
 
@@ -134,7 +137,8 @@ const App = {
     document.querySelectorAll(".nav-link").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.page === this.page);
     });
-    EduUtils.$("pageTitle").textContent = this.titles[this.page];
+    const isRecap = this.page === "results" && this.user.role !== "mahasiswa";
+    EduUtils.$("pageTitle").textContent = isRecap ? "Rekap Nilai" : this.titles[this.page];
 
     const views = {
       dashboard: () => EduViews.dashboard(this.user),
@@ -143,7 +147,7 @@ const App = {
         ? EduViews.materialDetail(this.materialId)
         : EduViews.materials(this.courseFilter)),
       quizzes: () => EduViews.quizzes(this.user),
-      results: () => EduViews.results(this.user),
+      results: () => EduViews.results(this.user, this.recapQuizId),
       users: () => EduViews.users(),
       manageQuiz: () => {
         const { quizId, edit } = this.quizAdmin;
@@ -233,6 +237,9 @@ const App = {
       case "delete-quiz":
         this.deleteQuiz(id);
         break;
+      case "export-csv":
+        if (this.user.role !== "mahasiswa") EduRecap.download(EduRecap.list(this.recapQuizId));
+        break;
       case "start-quiz":
         EduQuiz.start(id, this.user, EduUtils.$("quizArea"), () => this.go("results"));
         break;
@@ -265,6 +272,13 @@ const App = {
     this.editing = null;
     this.render();
     this.showMessage("manageMsg", "Materi berhasil disimpan.", true);
+  },
+
+  // Perubahan pilihan pada filter rekap nilai.
+  handleChange(event) {
+    if (event.target.id !== "recapFilter") return;
+    this.recapQuizId = event.target.value ? Number(event.target.value) : null;
+    this.render();
   },
 
   deleteQuiz(id) {

@@ -93,8 +93,9 @@ const EduViews = {
       <div id="quizArea"></div>`;
   },
 
-  results(user) {
-    const mine = EduStore.data.results.filter((r) => user.role !== "mahasiswa" || r.studentId === user.username);
+  results(user, quizId = null) {
+    if (user.role !== "mahasiswa") return this.recap(quizId);
+    const mine = EduStore.data.results.filter((r) => r.studentId === user.username);
     const items = mine.slice().reverse().map((r) => `
       <div class="list-item">
         <div><b>${esc(r.quiz)}</b><br><small>${esc(r.student)} · ${esc(r.date)} · ${r.correct}/${r.total} benar</small></div>
@@ -262,5 +263,45 @@ const EduViews = {
           <button class="secondary" type="button" data-action="cancel-question">Batal</button>
         </div>
       </form>`;
+  },
+
+  recap(quizId) {
+    const list = EduRecap.list(quizId);
+    const s = EduRecap.stats(list);
+    const fmt = (n) => n.toLocaleString("id-ID");
+    const options = ['<option value="">Semua kuis</option>']
+      .concat(EduStore.data.quizzes.map((q) =>
+        `<option value="${q.id}" ${q.id === quizId ? "selected" : ""}>${esc(q.title)}</option>`)).join("");
+    const rows = list.map((r) => `
+      <tr>
+        <td>${esc(r.student)}</td>
+        <td>${esc(r.quiz)}</td>
+        <td><b>${r.score}</b></td>
+        <td>${r.correct}/${r.total}</td>
+        <td>${esc(r.date)}</td>
+      </tr>`).join("");
+    return `
+      <div class="section-head">
+        <h3>Rekap nilai mahasiswa</h3>
+        <button class="secondary" data-action="export-csv" ${list.length ? "" : "disabled"}>Ekspor ke CSV</button>
+      </div>
+      <div class="panel">
+        <label for="recapFilter">Tampilkan kuis</label>
+        <select id="recapFilter">${options}</select>
+      </div>
+      <div class="stats four">
+        <div class="stat"><span>Jumlah pengerjaan</span><strong>${s.count}</strong></div>
+        <div class="stat"><span>Rata-rata nilai</span><strong>${fmt(s.avg)}</strong></div>
+        <div class="stat"><span>Nilai tertinggi</span><strong>${s.max}</strong></div>
+        <div class="stat"><span>Nilai terendah</span><strong>${s.min}</strong></div>
+      </div>
+      <div class="panel">
+        ${list.length
+          ? `<div class="table-wrap"><table class="user-table">
+              <thead><tr><th>Mahasiswa</th><th>Kuis</th><th>Nilai</th><th>Benar</th><th>Tanggal</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table></div>`
+          : '<p class="empty">Belum ada hasil kuis untuk ditampilkan.</p>'}
+      </div>`;
   },
 };
