@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduLearn | Pembelajaran Daring</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="loginView" class="login-screen">
+    <form id="loginForm" class="login-card">
+      <div class="brand-mark">E</div>
+      <h1>EduLearn</h1>
+      <p class="muted">Platform Pembelajaran Daring</p>
+      <label for="username">Nama pengguna</label>
+      <input id="username" required placeholder="Masukkan nama pengguna">
+      <label for="role">Masuk sebagai</label>
+      <select id="role">
+        <option value="mahasiswa">Mahasiswa</option>
+        <option value="dosen">Dosen</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="primary full" type="submit">Masuk ke aplikasi</button>
+      <p class="hint">Demo: masukkan nama apa saja, lalu pilih peran.</p>
+    </form>
+  </div>
+
+  <div id="appView" class="app hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark small">E</span><strong>EduLearn</strong></div>
+      <p class="nav-caption">MENU UTAMA</p>
+      <button class="nav-link active" data-page="dashboard">⌂ <span>Dashboard</span></button>
+      <button class="nav-link" data-page="courses">▤ <span>Mata Kuliah</span></button>
+      <button class="nav-link" data-page="materials">▧ <span>Materi</span></button>
+      <button class="nav-link" data-page="quizzes">✓ <span>Kuis</span></button>
+      <button class="nav-link" data-page="results">▥ <span>Nilai</span></button>
+      <div class="sidebar-bottom">
+        <div class="user-mini"><div class="avatar" id="sideAvatar">U</div><div><b id="sideName">Pengguna</b><small id="sideRole">Mahasiswa</small></div></div>
+        <button id="logoutBtn" class="logout">↪ Keluar</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><span class="muted small-text">PLATFORM PEMBELAJARAN DARING</span><h2 id="pageTitle">Dashboard</h2></div>
+        <div class="top-user"><span id="topName">Pengguna</span><div class="avatar" id="topAvatar">U</div></div>
+      </header>
+      <section id="pageContent"></section>
+      <footer>© 2026 EduLearn · Proyek Manajemen Proyek TI</footer>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
