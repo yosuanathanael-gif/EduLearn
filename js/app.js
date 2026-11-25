@@ -32,6 +32,14 @@ const App = {
     $("loginForm").addEventListener("submit", (e) => this.login(e));
     $("registerForm").addEventListener("submit", (e) => this.register(e));
     $("showRegister").addEventListener("click", () => this.showForm("registerForm"));
+    // Tombol akun demo hanya mengisi kolom login, tidak langsung masuk.
+    $("loginForm").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-demo]");
+      if (!btn) return;
+      $("username").value = btn.dataset.demo;
+      $("password").value = btn.dataset.pass;
+      $("password").focus();
+    });
     $("showLogin").addEventListener("click", () => this.showForm("loginForm"));
     $("logoutBtn").addEventListener("click", () => this.logout());
     document.querySelectorAll(".nav-link").forEach((btn) => {
@@ -251,6 +259,9 @@ const App = {
       case "delete-quiz":
         this.deleteQuiz(id);
         break;
+      case "print-material":
+        this.printMaterial(id);
+        break;
       case "toggle-done":
         if (this.user.role === "mahasiswa") EduProgress.toggle(this.user.username, id);
         this.render();
@@ -297,6 +308,7 @@ const App = {
       headings: f.getAll("sectionHeading"),
       bodies: f.getAll("sectionBody"),
       points: f.get("points"),
+      videoUrls: f.get("videoUrls") || "",
     });
     if (!result.ok) return this.showMessage("materialFormMsg", result.error);
     this.editing = null;
@@ -419,6 +431,17 @@ const App = {
     this.quizAdmin.edit = null;
     this.render();
     this.showMessage("quizMsg", "Soal berhasil disimpan.", true);
+  },
+
+  // "Unduh PDF": membuka dialog cetak browser, lalu pilih "Simpan sebagai PDF".
+  // Judul halaman diganti sementara agar nama berkas PDF sesuai judul materi.
+  printMaterial(id) {
+    const material = EduStore.material(id);
+    if (!material) return;
+    const oldTitle = document.title;
+    document.title = `EduLearn - ${material.title}`;
+    window.addEventListener("afterprint", () => { document.title = oldTitle; }, { once: true });
+    window.print();
   },
 
   saveName(event) {

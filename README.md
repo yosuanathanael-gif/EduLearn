@@ -17,13 +17,15 @@ Masih berupa prototipe front-end: login memakai kata sandi (di-hash), tetapi dat
 | Dosen | dosen | dosen123 |
 | Mahasiswa | mahasiswa | mahasiswa123 |
 
+Penilaian kuis dilakukan otomatis oleh sistem; Dosen memantau hasilnya di menu Nilai. "Unduh PDF" memakai dialog cetak browser (pilih Simpan sebagai PDF).
+
 Mahasiswa baru dapat mendaftar sendiri lewat tombol Daftar (peran otomatis Mahasiswa). Akun Dosen dan Admin hanya dibuat oleh Admin di menu Pengguna.
 
 ## Fitur
 
-- Semua peran: login, dashboard, mata kuliah, materi (dengan pencarian dan filter), profil (ubah nama, ganti kata sandi).
+- Semua peran: login (dengan tombol akun demo), dashboard, mata kuliah, materi (pencarian, filter, video YouTube pendukung, unduh PDF), profil (ubah nama, ganti kata sandi).
 - Mahasiswa: tandai materi selesai dipelajari, progres belajar per mata kuliah, kerjakan kuis, riwayat nilai.
-- Dosen dan Admin: kelola materi, kelola kuis dan soal, rekap nilai dan ekspor CSV.
+- Dosen dan Admin: kelola materi (termasuk tautan video YouTube), kelola kuis dan soal, rekap nilai dan ekspor CSV.
 - Admin: kelola pengguna (tambah, hapus, atur ulang kata sandi), cadangan dan pemulihan data.
 
 ## Struktur folder

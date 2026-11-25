@@ -106,6 +106,22 @@ const EduViews = {
       <div id="materialGrid" class="material-grid">${this.materialCards(list, user)}</div>`;
   },
 
+  // Video YouTube pendukung dari Dosen. ID sudah divalidasi, jadi aman dipakai di alamat.
+  videos(m) {
+    const ids = (m.videoIds || []).filter((id) => /^[A-Za-z0-9_-]{11}$/.test(id));
+    if (!ids.length) return "";
+    const embeds = ids.map((id) => `
+      <div class="video-embed no-print">
+        <iframe src="https://www.youtube-nocookie.com/embed/${id}" title="Video pendukung materi" loading="lazy"
+          allow="encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>`).join("");
+    const links = ids.map((id) => `<li>${EduMaterials.videoUrl(id)}</li>`).join("");
+    return `
+      <h3>Video pendukung</h3>
+      ${embeds}
+      <ul class="print-only">${links}</ul>`;
+  },
+
   materialDetail(id, user = null) {
     const m = EduStore.material(id);
     if (!m) return '<p class="empty">Materi tidak ditemukan.</p>';
@@ -120,6 +136,10 @@ const EduViews = {
         ${m.sections.map((s, i) => `<h3>${i + 1}. ${esc(s.heading)}</h3><p>${esc(s.body)}</p>`).join("")}
         <h3>Ringkasan Materi</h3>
         <ul>${m.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+        ${this.videos(m)}
+        <div class="row-actions no-print">
+          <button class="secondary" data-action="print-material" data-id="${m.id}">⎙ Unduh PDF</button>
+        </div>
         ${student ? `<button class="${done ? "secondary" : "primary"}" data-action="toggle-done" data-id="${m.id}">${done ? "✓ Sudah selesai (klik untuk batalkan)" : "Tandai selesai dipelajari"}</button>` : ""}
       </article>`;
   },
@@ -292,6 +312,8 @@ const EduViews = {
         <button type="button" class="secondary" data-action="add-section">+ Tambah bagian</button>
         <label for="mfPoints">Poin ringkasan (satu poin per baris)</label>
         <textarea id="mfPoints" name="points" rows="4">${esc(material ? material.points.join("\n") : "")}</textarea>
+        <label for="mfVideos">Tautan video YouTube pendukung (opsional, satu tautan per baris, maksimal 5)</label>
+        <textarea id="mfVideos" name="videoUrls" rows="3" placeholder="https://www.youtube.com/watch?v=...">${esc(material && material.videoIds ? material.videoIds.map((id) => EduMaterials.videoUrl(id)).join("\n") : "")}</textarea>
         <p id="materialFormMsg" class="form-error hidden" role="alert"></p>
         <div class="row-actions">
           <button class="primary" type="submit">Simpan materi</button>

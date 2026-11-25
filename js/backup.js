@@ -40,6 +40,8 @@ const EduBackup = {
     for (const m of data.materials) {
       if (typeof m.id !== "number" || !courseIds.has(m.courseId) || typeof m.title !== "string"
         || !Array.isArray(m.sections) || !Array.isArray(m.points)) return "Ada materi dengan format yang salah.";
+      if (m.videoIds !== undefined && (!Array.isArray(m.videoIds)
+        || !m.videoIds.every((id) => typeof id === "string" && /^[A-Za-z0-9_-]{11}$/.test(id)))) return "Ada materi dengan tautan video yang salah.";
     }
     for (const q of data.quizzes) {
       if (typeof q.id !== "number" || !courseIds.has(q.courseId) || !Array.isArray(q.questions)) return "Ada kuis dengan format yang salah.";
