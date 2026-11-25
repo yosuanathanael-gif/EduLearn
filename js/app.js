@@ -3,6 +3,7 @@ const App = {
   user: null, // { username, name, role }
   page: "dashboard",
   courseFilter: null,
+  materialQuery: "", // kata kunci pencarian materi
   materialId: null,
   editing: null, // null = daftar, "new" = materi baru, angka = id materi yang diubah
 
@@ -18,10 +19,12 @@ const App = {
     users: "Pengelolaan Pengguna",
     manage: "Kelola Materi",
     manageQuiz: "Kelola Kuis",
+    profile: "Profil Saya",
+    backup: "Cadangan Data",
   },
 
   // Halaman yang hanya boleh dibuka oleh peran tertentu.
-  restricted: { users: ["admin"], manage: ["dosen", "admin"], manageQuiz: ["dosen", "admin"] },
+  restricted: { users: ["admin"], manage: ["dosen", "admin"], manageQuiz: ["dosen", "admin"], backup: ["admin"] },
 
   init() {
     EduStore.load();
@@ -37,6 +40,7 @@ const App = {
     $("pageContent").addEventListener("click", (e) => this.handleAction(e));
     $("pageContent").addEventListener("submit", (e) => this.handleForm(e));
     $("pageContent").addEventListener("change", (e) => this.handleChange(e));
+    $("pageContent").addEventListener("input", (e) => this.handleInput(e));
 
     // Pulihkan sesi jika halaman di-refresh.
     const saved = EduStore.user(EduAuth.savedSession());
@@ -93,19 +97,26 @@ const App = {
   enter(user) {
     this.user = { username: user.username, name: user.name, role: user.role };
     EduAuth.saveSession(user.username);
-    const initial = user.name.charAt(0).toUpperCase();
     const $ = EduUtils.$;
-    $("sideName").textContent = user.name;
-    $("topName").textContent = user.name;
-    $("sideRole").textContent = EduUtils.roleName(user.role);
-    $("sideAvatar").textContent = initial;
-    $("topAvatar").textContent = initial;
+    this.showUserInfo();
     $("navUsers").classList.toggle("hidden", user.role !== "admin");
+    $("navBackup").classList.toggle("hidden", user.role !== "admin");
     $("navManage").classList.toggle("hidden", user.role === "mahasiswa");
     $("navQuiz").classList.toggle("hidden", user.role === "mahasiswa");
     $("loginView").classList.add("hidden");
     $("appView").classList.remove("hidden");
     this.go("dashboard");
+  },
+
+  // Menampilkan nama dan peran pengguna di sidebar dan bilah atas.
+  showUserInfo() {
+    const $ = EduUtils.$;
+    const initial = this.user.name.charAt(0).toUpperCase();
+    $("sideName").textContent = this.user.name;
+    $("topName").textContent = this.user.name;
+    $("sideRole").textContent = EduUtils.roleName(this.user.role);
+    $("sideAvatar").textContent = initial;
+    $("topAvatar").textContent = initial;
   },
 
   logout() {
@@ -126,6 +137,7 @@ const App = {
   go(page) {
     this.page = this.canOpen(page) ? page : "dashboard";
     this.courseFilter = null;
+    this.materialQuery = "";
     this.materialId = null;
     this.editing = null;
     this.quizAdmin = { quizId: null, edit: null };
@@ -142,10 +154,12 @@ const App = {
 
     const views = {
       dashboard: () => EduViews.dashboard(this.user),
-      courses: () => EduViews.courses(),
+      courses: () => EduViews.courses(this.user),
       materials: () => (this.materialId
-        ? EduViews.materialDetail(this.materialId)
-        : EduViews.materials(this.courseFilter)),
+        ? EduViews.materialDetail(this.materialId, this.user)
+        : EduViews.materials(this.courseFilter, this.materialQuery, this.user)),
+      profile: () => EduViews.profile(this.user),
+      backup: () => EduViews.backup(),
       quizzes: () => EduViews.quizzes(this.user),
       results: () => EduViews.results(this.user, this.recapQuizId),
       users: () => EduViews.users(),
@@ -237,6 +251,22 @@ const App = {
       case "delete-quiz":
         this.deleteQuiz(id);
         break;
+      case "toggle-done":
+        if (this.user.role === "mahasiswa") EduProgress.toggle(this.user.username, id);
+        this.render();
+        break;
+      case "delete-user":
+        this.deleteUser(el.dataset.id);
+        break;
+      case "reset-user":
+        this.resetUser(el.dataset.id);
+        break;
+      case "backup-download":
+        if (this.canOpen("backup")) EduBackup.download();
+        break;
+      case "backup-reset":
+        this.resetData();
+        break;
       case "export-csv":
         if (this.user.role !== "mahasiswa") EduRecap.download(EduRecap.list(this.recapQuizId));
         break;
@@ -274,11 +304,77 @@ const App = {
     this.showMessage("manageMsg", "Materi berhasil disimpan.", true);
   },
 
-  // Perubahan pilihan pada filter rekap nilai.
+  // Perubahan pilihan: filter rekap nilai, filter mata kuliah materi, dan berkas cadangan.
   handleChange(event) {
-    if (event.target.id !== "recapFilter") return;
-    this.recapQuizId = event.target.value ? Number(event.target.value) : null;
+    const { id, value } = event.target;
+    if (id === "recapFilter") {
+      this.recapQuizId = value ? Number(value) : null;
+      this.render();
+    } else if (id === "materialCourse") {
+      this.courseFilter = value ? Number(value) : null;
+      this.render();
+    } else if (id === "backupFile") {
+      this.restoreBackup(event.target.files[0]);
+    }
+  },
+
+  // Mengetik di kolom pencarian hanya memperbarui daftar, supaya kursor tidak hilang.
+  handleInput(event) {
+    if (event.target.id !== "materialSearch") return;
+    this.materialQuery = event.target.value;
+    const list = EduSearch.materials(this.materialQuery, this.courseFilter);
+    EduUtils.$("materialGrid").innerHTML = EduViews.materialCards(list, this.user);
+    EduUtils.$("materialCount").textContent = `${list.length} materi ditemukan`;
+  },
+
+  deleteUser(username) {
+    if (!this.canOpen("users")) return;
+    if (!confirm(`Hapus akun "${username}"? Hasil kuis akun ini tetap tersimpan di rekap.`)) return;
+    const result = EduAuth.removeUser(username, this.user.username);
     this.render();
+    this.showMessage("userListMsg", result.ok ? `Akun ${username} dihapus.` : result.error, result.ok);
+  },
+
+  async resetUser(username) {
+    if (!this.canOpen("users")) return;
+    const password = prompt(`Kata sandi baru untuk "${username}" (minimal 6 karakter):`);
+    if (password === null) return;
+    const result = await EduAuth.setPassword(username, password);
+    this.showMessage("userListMsg", result.ok ? `Kata sandi ${username} berhasil diatur ulang.` : result.error, result.ok);
+  },
+
+  // Setelah seluruh data diganti (pulihkan/reset), pastikan akun yang aktif masih ada.
+  afterDataReplaced(message) {
+    const current = EduStore.user(this.user.username);
+    if (!current) {
+      this.logout();
+      alert("Data berhasil diganti. Akun Anda tidak ada di data baru, silakan masuk kembali.");
+      return;
+    }
+    this.enter(current);
+    this.go("backup");
+    this.showMessage("backupMsg", message, true);
+  },
+
+  async restoreBackup(file) {
+    if (!file || !this.canOpen("backup")) return;
+    if (!confirm("Pulihkan dari cadangan? Seluruh data saat ini akan diganti.")) {
+      EduUtils.$("backupFile").value = "";
+      return;
+    }
+    const result = EduBackup.restore(await file.text());
+    if (!result.ok) {
+      EduUtils.$("backupFile").value = "";
+      return this.showMessage("backupMsg", result.error);
+    }
+    this.afterDataReplaced("Data berhasil dipulihkan dari cadangan.");
+  },
+
+  resetData() {
+    if (!this.canOpen("backup")) return;
+    if (!confirm("Kembalikan semua data ke data awal? Perubahan dan hasil kuis akan hilang.")) return;
+    EduStore.reset();
+    this.afterDataReplaced("Data dikembalikan ke data awal.");
   },
 
   deleteQuiz(id) {
@@ -325,10 +421,31 @@ const App = {
     this.showMessage("quizMsg", "Soal berhasil disimpan.", true);
   },
 
+  saveName(event) {
+    event.preventDefault();
+    const result = EduAuth.renameUser(this.user.username, new FormData(event.target).get("name"));
+    if (!result.ok) return this.showMessage("nameFormMsg", result.error);
+    this.user.name = result.user.name;
+    this.showUserInfo();
+    this.render();
+    this.showMessage("nameFormMsg", "Nama berhasil diubah.", true);
+  },
+
+  async savePassword(event) {
+    event.preventDefault();
+    const f = new FormData(event.target);
+    const result = await EduAuth.changePassword(this.user.username, f.get("old"), f.get("password"), f.get("confirm"));
+    if (!result.ok) return this.showMessage("passwordFormMsg", result.error);
+    event.target.reset();
+    this.showMessage("passwordFormMsg", "Kata sandi berhasil diganti.", true);
+  },
+
   async handleForm(event) {
     if (event.target.id === "quizForm") return this.saveQuiz(event);
     if (event.target.id === "questionForm") return this.saveQuestion(event);
     if (event.target.id === "materialForm") return this.saveMaterial(event);
+    if (event.target.id === "nameForm") return this.saveName(event);
+    if (event.target.id === "passwordForm") return this.savePassword(event);
     if (event.target.id !== "userForm") return;
     event.preventDefault();
     if (this.user.role !== "admin") return; // pemeriksaan ulang di sisi logika

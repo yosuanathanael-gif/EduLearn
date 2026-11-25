@@ -19,6 +19,13 @@ Masih berupa prototipe front-end: login memakai kata sandi (di-hash), tetapi dat
 
 Mahasiswa baru dapat mendaftar sendiri lewat tombol Daftar (peran otomatis Mahasiswa). Akun Dosen dan Admin hanya dibuat oleh Admin di menu Pengguna.
 
+## Fitur
+
+- Semua peran: login, dashboard, mata kuliah, materi (dengan pencarian dan filter), profil (ubah nama, ganti kata sandi).
+- Mahasiswa: tandai materi selesai dipelajari, progres belajar per mata kuliah, kerjakan kuis, riwayat nilai.
+- Dosen dan Admin: kelola materi, kelola kuis dan soal, rekap nilai dan ekspor CSV.
+- Admin: kelola pengguna (tambah, hapus, atur ulang kata sandi), cadangan dan pemulihan data.
+
 ## Struktur folder
 
 ```
@@ -34,6 +41,9 @@ EduLearn/
     quiz-admin.js   Tambah/hapus kuis, tambah/ubah/hapus soal (Dosen dan Admin)
     recap.js        Rekap nilai, statistik, dan ekspor CSV (Dosen dan Admin)
     views.js        Tampilan tiap halaman
+    progress.js     Progres belajar (materi ditandai selesai)
+    search.js       Pencarian materi
+    backup.js       Cadangan data (ekspor/impor JSON) dan reset
     quiz.js         Pengerjaan kuis dan penilaian otomatis
     app.js          Login, navigasi, dan penangan klik
 ```

@@ -1,7 +1,7 @@
 /* Penyimpanan data di localStorage. Data awal berasal dari folder data/. */
 const EduStore = {
   KEY: "edulearn_v3",
-  data: { courses: [], materials: [], quizzes: [], results: [], users: [] },
+  data: { courses: [], materials: [], quizzes: [], results: [], users: [], progress: {} },
 
   load() {
     try {
@@ -12,6 +12,7 @@ const EduStore = {
           this.data.users = structuredClone(window.EDULEARN_SEED.users);
           this.save();
         }
+        if (!this.data.progress) this.data.progress = {}; // data lama belum punya progres belajar
         return;
       }
     } catch (error) {
@@ -24,7 +25,21 @@ const EduStore = {
       quizzes: structuredClone(seed.quizzes),
       results: [],
       users: structuredClone(seed.users),
+      progress: {},
     };
+    this.save();
+  },
+
+  // Mengembalikan semua data ke data awal (dipakai fitur cadangan).
+  reset() {
+    localStorage.removeItem(this.KEY);
+    this.load();
+  },
+
+  // Mengganti seluruh data dengan data hasil impor yang sudah divalidasi.
+  replace(data) {
+    this.data = data;
+    if (!this.data.progress) this.data.progress = {};
     this.save();
   },
 

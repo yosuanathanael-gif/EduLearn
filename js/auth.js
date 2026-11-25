@@ -44,6 +44,51 @@ const EduAuth = {
     return (await this.hash(password, user.salt)) === user.hash ? { ok: true, user } : failed;
   },
 
+  adminCount() {
+    return EduStore.data.users.filter((u) => u.role === "admin").length;
+  },
+
+  // Hapus akun: tidak boleh akun sendiri dan tidak boleh admin terakhir.
+  removeUser(username, actor) {
+    const user = EduStore.user(username);
+    if (!user) return { ok: false, error: "Akun tidak ditemukan." };
+    if (username === actor) return { ok: false, error: "Akun yang sedang dipakai tidak bisa dihapus." };
+    if (user.role === "admin" && this.adminCount() <= 1) return { ok: false, error: "Admin terakhir tidak boleh dihapus." };
+    EduStore.data.users = EduStore.data.users.filter((u) => u.username !== username);
+    delete EduStore.data.progress[username];
+    EduStore.save();
+    return { ok: true };
+  },
+
+  async setPassword(username, password) {
+    const user = EduStore.user(username);
+    if (!user) return { ok: false, error: "Akun tidak ditemukan." };
+    if (password.length < 6) return { ok: false, error: "Kata sandi minimal 6 karakter." };
+    user.salt = this.newSalt();
+    user.hash = await this.hash(password, user.salt);
+    EduStore.save();
+    return { ok: true };
+  },
+
+  // Ganti kata sandi sendiri: kata sandi lama wajib benar.
+  async changePassword(username, oldPassword, newPassword, confirm) {
+    const user = EduStore.user(username);
+    if (!user) return { ok: false, error: "Akun tidak ditemukan." };
+    if ((await this.hash(oldPassword, user.salt)) !== user.hash) return { ok: false, error: "Kata sandi lama salah." };
+    if (newPassword !== confirm) return { ok: false, error: "Konfirmasi kata sandi baru tidak sama." };
+    if (newPassword === oldPassword) return { ok: false, error: "Kata sandi baru harus berbeda dari yang lama." };
+    return this.setPassword(username, newPassword);
+  },
+
+  renameUser(username, name) {
+    const user = EduStore.user(username);
+    if (!user) return { ok: false, error: "Akun tidak ditemukan." };
+    if (name.trim().length < 3) return { ok: false, error: "Nama lengkap minimal 3 karakter." };
+    user.name = name.trim();
+    EduStore.save();
+    return { ok: true, user };
+  },
+
   saveSession(username) {
     try { sessionStorage.setItem(this.SESSION_KEY, username); } catch (e) { /* abaikan */ }
   },
